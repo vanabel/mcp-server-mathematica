@@ -8,7 +8,8 @@
     "mathematica-server": "./build/index.js"
   },
   "files": [
-    "build"
+    "build",
+    "config"
   ],
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",

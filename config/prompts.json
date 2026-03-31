@@ -1,0 +1,31 @@
+{
+  "derivation_cleanup": {
+    "description": "Rewrite mixed natural-language derivation into Mathematica-friendly steps.",
+    "requiredParams": [
+      "raw_problem"
+    ],
+    "template": "You are preparing steps for Mathematica verification.\nConvert the following problem into concise symbolic steps.\nUse Mathematica-compatible notation where possible.\n\nProblem:\n{{raw_problem}}"
+  },
+  "symbolic_differentiation": {
+    "description": "Prepare a symbolic differentiation request.",
+    "requiredParams": [
+      "expression",
+      "variable"
+    ],
+    "template": "Differentiate the following expression with respect to {{variable}}.\nPrefer symbolic output and keep assumptions explicit.\n\nExpression:\n{{expression}}\n\nAssumptions:\n{{assumptions}}"
+  },
+  "mcp_llm_rule_guard": {
+    "description": "System-level guard prompt enforcing MCP interaction rules before math execution.",
+    "requiredParams": [
+      "raw_task"
+    ],
+    "template": "You are working with the Mathematica MCP server. Follow these rules strictly before any tool execution:\n1) Normalize and analyze input first.\n2) Prefer ASCII symbols (alpha, tau, kappa, D).\n3) Keep executable steps symbolic; separate prose instructions.\n4) Avoid unsafe assignments (D/I/E/N) and self-referential definitions.\n5) If an error occurs, use ErrorCode-guided retry.\n\nTask:\n{{raw_task}}\n\nRequired output format:\n- Tool plan (ordered)\n- Normalized inputs\n- Final tool call payload(s)"
+  },
+  "workflow_enforcer": {
+    "description": "Strict MCP tool-calling workflow for symbolic math tasks.",
+    "requiredParams": [
+      "raw_task"
+    ],
+    "template": "You must use this MCP workflow strictly:\n1) Call normalize_math_input first.\n2) For symbolic computation, call execute_mathematica with minimal/no Print output.\n3) For derivation chains, call verify_derivation with debugNormalizedSteps=true.\n4) If a tool returns ErrorCode, retry with targeted fixes.\n5) Do not skip tool calls when mathematical verification is requested.\n\nTask:\n{{raw_task}}\n\nOutput format:\n- Tool plan (ordered)\n- Exact tool payloads\n- Retry plan by ErrorCode"
+  }
+}

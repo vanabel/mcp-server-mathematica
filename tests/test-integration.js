@@ -202,6 +202,160 @@ async function testVerifyDerivation() {
   return true;
 }
 
+async function testVerifyDerivationInstructionStep() {
+  console.log('\n=== Test Case: Verify Derivation (Instruction Step + Custom Keywords) ===');
+  const result = await sendRequest({
+    method: 'mcp.call_tool',
+    params: {
+      name: 'verify_derivation',
+      arguments: {
+        steps: [
+          'x^2 + 2x + 1',
+          '(x + 1)^2',
+          'Please compute d/dx and show that the result is equivalent'
+        ],
+        instructionKeywords: ['please compute', 'show that'],
+        format: 'text'
+      }
+    }
+  });
+
+  if (!result || !Array.isArray(result.content) || result.content.length !== 1 || result.content[0].type !== 'text') {
+    throw new Error('Verify Derivation (instruction step) response structure is invalid.');
+  }
+
+  const textResult = result.content[0].text;
+  if (!textResult.includes('Step 3:') || !textResult.includes('Valid: SkippedInstruction')) {
+    throw new Error(`Expected Step 3 to be marked as SkippedInstruction. Got: ${textResult.substring(0, 300)}...`);
+  }
+
+  console.log('✅ Verify Derivation instruction-step test passed.');
+  return true;
+}
+
+async function testVerifyDerivationChineseInstructionStep() {
+  console.log('\n=== Test Case: Verify Derivation (Chinese Instruction Step) ===');
+  const result = await sendRequest({
+    method: 'mcp.call_tool',
+    params: {
+      name: 'verify_derivation',
+      arguments: {
+        steps: [
+          'x^2 + 2x + 1',
+          '(x + 1)^2',
+          '请计算导数并证明结果等价'
+        ],
+        format: 'text'
+      }
+    }
+  });
+
+  if (!result || !Array.isArray(result.content) || result.content.length !== 1 || result.content[0].type !== 'text') {
+    throw new Error('Verify Derivation (Chinese instruction step) response structure is invalid.');
+  }
+
+  const textResult = result.content[0].text;
+  if (!textResult.includes('Step 3:') || !textResult.includes('Valid: SkippedInstruction')) {
+    throw new Error(`Expected Chinese instruction step to be marked as SkippedInstruction. Got: ${textResult.substring(0, 300)}...`);
+  }
+
+  console.log('✅ Verify Derivation Chinese instruction-step test passed.');
+  return true;
+}
+
+async function testVerifyDerivationNormalizedDebugOutput() {
+  console.log('\n=== Test Case: Verify Derivation (Debug Normalized Steps) ===');
+  const result = await sendRequest({
+    method: 'mcp.call_tool',
+    params: {
+      name: 'verify_derivation',
+      arguments: {
+        steps: [
+          'Given: D\\tilde{\\kappa} = r^2 - r r_\\tau',
+          'D^2 = r^2 + r_\\alpha^2'
+        ],
+        format: 'text',
+        debugNormalizedSteps: true
+      }
+    }
+  });
+
+  if (!result || !Array.isArray(result.content) || result.content.length !== 1 || result.content[0].type !== 'text') {
+    throw new Error('Verify Derivation (debug normalized steps) response structure is invalid.');
+  }
+
+  const textResult = result.content[0].text;
+  if (!textResult.includes('Normalized:')) {
+    throw new Error(`Expected debug output to contain "Normalized:". Got: ${textResult.substring(0, 300)}...`);
+  }
+
+  console.log('✅ Verify Derivation normalized debug output test passed.');
+  return true;
+}
+
+async function testDifferentiateSymbolic() {
+  console.log('\n=== Test Case: Differentiate Symbolic (x^2 wrt x) ===');
+  const result = await sendRequest({
+    method: 'mcp.call_tool',
+    params: {
+      name: 'differentiate_symbolic',
+      arguments: {
+        expression: 'x^2',
+        variable: 'x',
+        format: 'text',
+        mode: 'mathematica'
+      }
+    }
+  });
+
+  if (!result || !Array.isArray(result.content) || result.content.length !== 1 || result.content[0].type !== 'text') {
+    throw new Error('Differentiate Symbolic response structure is invalid.');
+  }
+
+  const textResult = result.content[0].text.trim();
+  // Wolfram text output may vary spacing/style, accept common forms.
+  if (textResult !== '2 x' && textResult !== '2*x' && textResult !== '2 x^1') {
+    throw new Error(`Differentiate Symbolic expected a form of '2x', but got '${textResult}'`);
+  }
+
+  console.log('✅ Differentiate Symbolic test passed.');
+  return true;
+}
+
+async function testReloadPromptResources() {
+  console.log('\n=== Test Case: Reload Prompt/Resource Configs ===');
+  const result = await sendRequest({
+    method: 'mcp.call_tool',
+    params: {
+      name: 'reload_prompt_resources',
+      arguments: {}
+    }
+  });
+
+  if (!result || !Array.isArray(result.content) || result.content.length !== 1 || result.content[0].type !== 'text') {
+    throw new Error('Reload Prompt/Resource response structure is invalid.');
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(result.content[0].text);
+  } catch (error) {
+    throw new Error(`Reload Prompt/Resource response is not valid JSON: ${result.content[0].text}`);
+  }
+
+  if (
+    typeof payload.promptCount !== 'number' ||
+    typeof payload.resourceCount !== 'number' ||
+    payload.promptCount < 1 ||
+    payload.resourceCount < 1
+  ) {
+    throw new Error(`Unexpected reload result payload: ${JSON.stringify(payload)}`);
+  }
+
+  console.log('✅ Reload Prompt/Resource test passed.');
+  return true;
+}
+
 async function testExecuteMathematicaError() {
   console.log('\n=== Test Case: Execute Mathematica (Syntax Error) ===');
   const result = await sendRequest({
@@ -231,6 +385,11 @@ async function runIntegrationTests() {
     testListTools,
     testExecuteMathematica,
     testVerifyDerivation,
+    testVerifyDerivationInstructionStep,
+    testVerifyDerivationChineseInstructionStep,
+    testVerifyDerivationNormalizedDebugOutput,
+    testDifferentiateSymbolic,
+    testReloadPromptResources,
     // testExecuteMathematicaError // Currently, the server catches wolframscript errors and returns a successful JSON-RPC response with isError:true
   ];
   const totalTests = testFunctions.length;

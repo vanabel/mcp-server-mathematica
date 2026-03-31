@@ -1,0 +1,20 @@
+[
+  {
+    "id": "input-guidelines",
+    "title": "Input Guidelines",
+    "description": "Practical input rules for stable Mathematica parsing",
+    "content": "- Prefer Mathematica-like syntax for executable steps.\n- Put prose instructions in separate steps (Given, We want to find, etc.).\n- Avoid assigning to protected symbols: D, I, E, N.\n- Avoid self-referential assignments like r = r[alpha, tau]."
+  },
+  {
+    "id": "error-codes",
+    "title": "Structured Error Codes",
+    "description": "ErrorCode meanings and suggested fixes",
+    "content": "PrecheckRecursiveAssignment: self-referential assignment detected.\nProtectedSymbol: assignment targeted a protected Mathematica symbol.\nSyntaxError: Mathematica parser rejected the input.\nRecursionLimit: evaluation exceeded recursion depth.\nDifferentiationParseError: differentiate_symbolic parse probe failed."
+  },
+  {
+    "id": "mcp-llm-rules",
+    "title": "MCP-LLM Interaction Rules",
+    "description": "Execution rules that the LLM should follow when interacting with this MCP server",
+    "content": "[中文规则]\n1) 先规范化，再计算：先调用 normalize_math_input / analyze_math_step，再调用 verify_derivation 或 execute_mathematica。\n2) 变量命名优先 ASCII：使用 alpha, tau, kappa, D；避免混用 LaTeX 和乱码符号。\n3) 推导步骤要“可计算”：steps 中尽量只放表达式/等式；说明性语句单独成步。\n4) 禁止危险赋值：不要给 D/I/E/N 直接赋值；避免自引用定义（如 r = r[alpha,tau]）。\n5) 出错先读 ErrorCode：根据 Structured Error Codes 做修复重试，不要盲目重复执行。\n6) 修改提示/资源 JSON 后，必须调用 reload_prompt_resources 进行热重载。\n\n[English Rules]\n1) Normalize before computing: call normalize_math_input / analyze_math_step before verify_derivation or execute_mathematica.\n2) Prefer ASCII variables: use alpha, tau, kappa, D and avoid mixed LaTeX/mojibake symbols.\n3) Keep derivation steps executable: steps should primarily be equations/expressions; keep prose as separate instruction steps.\n4) Avoid unsafe assignments: do not assign directly to D/I/E/N; avoid self-referential definitions like r = r[alpha, tau].\n5) Handle errors by ErrorCode: read structured ErrorCode and retry with targeted fixes.\n6) After editing prompt/resource JSON files, call reload_prompt_resources to hot-reload."
+  }
+]
